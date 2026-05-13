@@ -591,7 +591,7 @@ function Admin({ candidates, votes, refresh, onLogout }) {
     if (form.file) {
       const ext = form.file.name.split(".").pop();
       const fname = `${Date.now()}.${ext}`;
-      const { error:ue } = await supabase.storage.from("candidate-photos").upload(fname, form.file, { upsert:true });
+      const { error:ue } = await supabase.storage.from("candidate-photos").upload(fname, form.file);
       if (ue) { showT("Photo upload failed","error"); setBusy(false); return; }
       const { data:ud } = supabase.storage.from("candidate-photos").getPublicUrl(fname);
       photo_url = ud.publicUrl;
