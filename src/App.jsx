@@ -45,6 +45,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const COMPANY_DOMAIN = import.meta.env.VITE_COMPANY_DOMAIN;
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 const APP_TITLE = import.meta.env.VITE_APP_TITLE;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -240,10 +241,6 @@ function Login({ onLogin }) {
       setStep("password");
       return;
     }
-    if (e === "user@biztras") {
-      onLogin(e, false);
-      return;
-    }
     if (!e.endsWith(COMPANY_DOMAIN.toLowerCase())) return setErr(`Only ${COMPANY_DOMAIN} emails are allowed.`);
     setLoading(true);
     try {
@@ -265,7 +262,7 @@ function Login({ onLogin }) {
   };
 
   const submitPassword = () => {
-    if (password === "12345") {
+    if (password === ADMIN_PASSWORD) {
       onLogin(email.trim().toLowerCase(), false);
     } else {
       setErr("Incorrect password.");
@@ -562,12 +559,12 @@ function ThankYou({ onResults, onLogout, deadlineDate }) {
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ candidates, votes, onLogout, deadlineDate, showResSetting, isAdmin }) {
-  const total = votes.length;
+function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, showResSetting, isAdmin }) {
+  const total = totalVotes;
   const closed = !useCountdown(deadlineDate);
   const canSeeData = isAdmin || showResSetting;
 
-  const getCount = (id) => votes.filter(v => v.boys_candidate_id === id || v.girls_candidate_id === id).length;
+  const getCount = (id) => voteCounts[id] || 0;
 
   const renderCat = (cat) => {
     const color = cat === "boys" ? "#6366f1" : "#ec4899";
@@ -744,7 +741,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
     }
   };
 
-  const getCount = (id) => votes.filter(v=>v.boys_candidate_id===id||v.girls_candidate_id===id).length;
+  const getCount = (id) => votes[id] || 0;
 
   return (
     <div style={{ maxWidth:700, margin:"0 auto", padding:"2rem 1.25rem" }}>
@@ -961,7 +958,8 @@ export default function App() {
   const [deadlineDate, setDeadlineDate] = useState(null);
   const [showResSetting, setShowResSetting] = useState(false);
   const [candidates, setCandidates] = useState([]);
-  const [votes, setVotes] = useState([]);
+  const [voteCounts, setVoteCounts] = useState({});
+  const [totalVotes, setTotalVotes] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -974,12 +972,21 @@ export default function App() {
   const fetchAll = useCallback(async () => {
     const [c, v, s, r] = await Promise.all([
       supabase.from("candidates").select("*").order("created_at"),
-      supabase.from("votes").select("*"),
+      supabase.from("vote_counts").select("*"),
       supabase.from("settings").select("*").eq("key", "voting_deadline").maybeSingle(),
       supabase.from("settings").select("*").eq("key", "show_results").maybeSingle(),
     ]);
     setCandidates(c.data || []);
-    setVotes(v.data || []);
+    
+    const counts = {};
+    let total = 0;
+    (v.data || []).forEach(row => {
+      counts[row.candidate_id] = row.count;
+      total += row.count;
+    });
+    setVoteCounts(counts);
+    setTotalVotes(total / 2); // Divide by 2 because each person has 2 votes (one per category)
+    
     if (s.data) setDeadlineDate(new Date(s.data.value));
     else setDeadlineDate(new Date(import.meta.env.VITE_VOTING_DEADLINE));
     if (r.data) setShowResSetting(r.data.value === "true");
@@ -1032,11 +1039,11 @@ export default function App() {
       {orbs}
       <div style={{ position:"relative", zIndex:1 }}>
         {isAdmin
-          ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
+          ? <Admin candidates={candidates} votes={voteCounts} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
           : screen==="thankyou"
             ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} />
             : screen==="results"
-              ? <Results candidates={candidates} votes={votes} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} isAdmin={false} />
+              ? <Results candidates={candidates} voteCounts={voteCounts} totalVotes={totalVotes} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} isAdmin={false} />
               : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} deadlineDate={deadlineDate} />
         }
       </div>
