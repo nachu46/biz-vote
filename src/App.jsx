@@ -164,6 +164,19 @@ const GLOBAL_CSS = `
 
   .err-box { color: #f87171; font-size: 13px; padding: 0.7rem 1rem; background: rgba(239,68,68,0.08); border-radius: 10px; border: 1px solid rgba(239,68,68,0.18); }
   .timer-d { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); border-radius: 13px; padding: 0.7rem 0.55rem; min-width: 62px; text-align: center; }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 600px) {
+    .otp-in { width: 42px; height: 52px; font-size: 20px; border-radius: 10px; }
+    .btn-pri { padding: 0.75rem 1.2rem; font-size: 14px; border-radius: 12px; }
+    .btn-ghost { padding: 0.55rem 0.9rem; font-size: 13px; }
+    .inp { padding: 0.75rem 0.9rem; font-size: 14px; border-radius: 11px; }
+    .glass, .glass-md { border-radius: 14px !important; }
+    .tab-btn { padding: 0.45rem 0.75rem; font-size: 12px; }
+    .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+    .timer-d { min-width: 48px; padding: 0.5rem 0.35rem; }
+    .timer-d > div:first-child { font-size: 20px; }
+  }
 `;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -541,21 +554,30 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
   );
 }
 
-// ─── Thank You ────────────────────────────────────────────────────────────────
+// ─── Thank You / Voted Screen ─────────────────────────────────────────────────
 
-function ThankYou({ onResults, onLogout, deadlineDate }) {
+function ThankYou({ onResults, onLogout, deadlineDate, showResSetting }) {
   return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
-      <div style={{ textAlign:"center", maxWidth:400 }}>
+    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem" }}>
+      <div style={{ textAlign:"center", maxWidth:420, width:"100%" }}>
         <div style={{ fontSize:72, marginBottom:24 }} className="float">🎉</div>
-        <h1 style={{ fontSize:30, fontWeight:700, marginBottom:12 }}>Vote Submitted!</h1>
-        <p style={{ color:"#5a5a7a", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
-          Your vote is securely saved. Results will show after the deadline on {deadlineDate ? deadlineDate.toLocaleDateString("en-IN", { day:"numeric", month:"long" }) : "the deadline"}.
+        <h1 style={{ fontSize:"clamp(22px, 6vw, 30px)", fontWeight:700, marginBottom:12 }}>You Have Voted!</h1>
+        <p style={{ color:"#5a5a7a", fontSize:15, lineHeight:1.7, marginBottom:12 }}>
+          Your vote has been securely recorded. Thank you for participating!
         </p>
-        <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
-          <button className="btn-pri" onClick={onResults}>View Results</button>
-          <button className="btn-ghost" onClick={onLogout}>Logout</button>
+        
+        <div className="glass" style={{ borderRadius:16, padding:"1.2rem", marginBottom:28 }}>
+          <div style={{ fontSize:20, marginBottom:6 }}>🤫</div>
+          <div style={{ fontWeight:600, fontSize:14, color:"#a5b4fc", marginBottom:4 }}>Results are not published yet</div>
+          <div style={{ fontSize:13, color:"#5a5a7a" }}>
+            Winners will be announced {deadlineDate ? "after " + deadlineDate.toLocaleDateString("en-IN", { day:"numeric", month:"long" }) : "soon"}.
+          </div>
         </div>
+
+        {showResSetting && (
+          <button className="btn-pri" style={{ width:"100%", marginBottom:10 }} onClick={onResults}>View Results</button>
+        )}
+        <button className="btn-ghost" style={{ width:"100%" }} onClick={onLogout}>Logout</button>
       </div>
     </div>
   );
@@ -1001,17 +1023,17 @@ export default function App() {
   useEffect(() => {
     if (!session || !deadlineDate) return;
     const closed = Date.now() > deadlineDate;
-    const showRes = localStorage.getItem("showResults") === "true";
-    if (session.hasVoted || closed || showResSetting) setScreen("results");
+    if (session.hasVoted) setScreen("thankyou");
+    else if (closed || showResSetting) setScreen("results");
     else setScreen("vote");
-  }, [session, deadlineDate]);
+  }, [session, deadlineDate, showResSetting]);
 
   const doLogin = (email, hasVoted) => {
     const s = { email, hasVoted };
     setSession(s); localStorage.setItem("vs26", JSON.stringify(s));
     const closed = deadlineDate && Date.now() > deadlineDate;
-    const showRes = localStorage.getItem("showResults") === "true";
-    if (hasVoted || closed || showResSetting) setScreen("results");
+    if (hasVoted) setScreen("thankyou");
+    else if (closed || showResSetting) setScreen("results");
     else setScreen("vote");
   };
 
@@ -1045,7 +1067,7 @@ export default function App() {
         {isAdmin
           ? <Admin candidates={candidates} votes={voteCounts} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
           : screen==="thankyou"
-            ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} />
+            ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
             : screen==="results"
               ? <Results candidates={candidates} voteCounts={voteCounts} totalVotes={totalVotes} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} isAdmin={false} />
               : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} deadlineDate={deadlineDate} />
