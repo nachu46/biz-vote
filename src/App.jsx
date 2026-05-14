@@ -562,9 +562,10 @@ function ThankYou({ onResults, onLogout, deadlineDate }) {
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ candidates, votes, onLogout, deadlineDate }) {
+function Results({ candidates, votes, onLogout, deadlineDate, showResSetting, isAdmin }) {
   const total = votes.length;
   const closed = !useCountdown(deadlineDate);
+  const canSeeData = isAdmin || showResSetting;
 
   const getCount = (id) => votes.filter(v => v.boys_candidate_id === id || v.girls_candidate_id === id).length;
 
@@ -582,25 +583,27 @@ function Results({ candidates, votes, onLogout, deadlineDate }) {
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           {list.map((c, i) => (
-            <div key={c.id} className={`glass ${i===0&&c.count>0?"glow-anim":""}`} style={{ borderRadius:18, padding:"1.2rem 1.35rem", position:"relative" }}>
-              {i===0&&c.count>0&&(
+            <div key={c.id} className={`glass ${i===0&&c.count>0&&canSeeData?"glow-anim":""}`} style={{ borderRadius:18, padding:"1.2rem 1.35rem", position:"relative" }}>
+              {i===0&&c.count>0&&canSeeData&&(
                 <div style={{ position:"absolute", top:-11, right:14, fontSize:11, fontWeight:700, padding:"3px 11px", borderRadius:999, background:gradient, color:"#fff", letterSpacing:"0.04em" }}>
                   🏆 WINNER
                 </div>
               )}
-              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:canSeeData?12:0 }}>
                 <div style={{ width:46, height:46, borderRadius:12, overflow:"hidden", background:"rgba(255,255,255,0.06)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                   {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>👤</span>}
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:600, fontSize:15 }}>{c.name}</div>
-                  <div style={{ fontSize:12, color:"#5a5a7a" }}>{c.count} vote{c.count!==1?"s":""}</div>
+                  {canSeeData && <div style={{ fontSize:12, color:"#5a5a7a" }}>{c.count} vote{c.count!==1?"s":""}</div>}
                 </div>
-                <div style={{ fontSize:22, fontWeight:700, color }}>{total>0?Math.round(c.count/total*100):0}%</div>
+                {canSeeData && <div style={{ fontSize:22, fontWeight:700, color }}>{total>0?Math.round(c.count/total*100):0}%</div>}
               </div>
-              <div className="bar-track">
-                <div className="bar-fill" style={{ width:`${(c.count/max)*100}%`, background:gradient }} />
-              </div>
+              {canSeeData && (
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width:`${(c.count/max)*100}%`, background:gradient }} />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -618,7 +621,15 @@ function Results({ candidates, votes, onLogout, deadlineDate }) {
         <button className="btn-ghost" onClick={onLogout}>↩ Logout</button>
       </div>
 
-      {closed && (
+      {!canSeeData && (
+        <div className="fu1" style={{ padding:"1.5rem", borderRadius:18, background:"rgba(99,102,241,0.06)", border:"1px solid rgba(99,102,241,0.12)", color:"#a5b4fc", textAlign:"center", marginBottom:30 }}>
+          <div style={{ fontSize:32, marginBottom:10 }}>🤫</div>
+          <div style={{ fontWeight:600, fontSize:18, marginBottom:4 }}>Results are hidden</div>
+          <div style={{ fontSize:14, opacity:0.7 }}>The final winners will be announced soon!</div>
+        </div>
+      )}
+
+      {closed && canSeeData && (
         <div className="fu1" style={{ padding:"0.75rem 1.1rem", borderRadius:12, background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", color:"#6ee7b7", fontSize:13, marginBottom:24 }}>
           ✅ Voting closed — these are the final results
         </div>
@@ -633,17 +644,21 @@ function Results({ candidates, votes, onLogout, deadlineDate }) {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
-function Admin({ candidates, votes, refresh, onLogout, deadlineDate }) {
+function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSetting }) {
   const [tab, setTab] = useState("candidates");
   const [toast, setToast] = useState(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name:"", bio:"", category:"boys", file:null, preview:"" });
   const [busy, setBusy] = useState(false);
-  const [showRes, setShowRes] = useState(() => localStorage.getItem("showResults")==="true");
+  const [showRes, setShowRes] = useState(showResSetting);
   const [newDeadline, setNewDeadline] = useState("");
   const [isEditingDeadline, setIsEditingDeadline] = useState(false);
   const fileRef = useRef();
   const deadline = useCountdown(deadlineDate);
+
+  useEffect(() => {
+    setShowRes(showResSetting);
+  }, [showResSetting]);
 
   useEffect(() => {
     if (deadlineDate) {
@@ -693,10 +708,17 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate }) {
     }
   };
 
-  const toggleShow = () => {
-    const n = !showRes; setShowRes(n);
-    localStorage.setItem("showResults", String(n));
-    showT(n ? "Results now visible to voters" : "Results hidden");
+  const toggleShow = async () => {
+    const n = !showRes; 
+    setBusy(true);
+    const { error } = await supabase.from("settings").upsert({ key:"show_results", value: String(n) });
+    if (error) showT("Failed to update setting", "error");
+    else {
+      setShowRes(n);
+      refresh();
+      showT(n ? "Results now visible to voters" : "Results hidden from voters");
+    }
+    setBusy(false);
   };
 
   const dlCSV = () => {
@@ -937,6 +959,7 @@ export default function App() {
   });
   const [screen, setScreen] = useState("vote");
   const [deadlineDate, setDeadlineDate] = useState(null);
+  const [showResSetting, setShowResSetting] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [votes, setVotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -949,15 +972,17 @@ export default function App() {
   }, []);
 
   const fetchAll = useCallback(async () => {
-    const [c, v, s] = await Promise.all([
+    const [c, v, s, r] = await Promise.all([
       supabase.from("candidates").select("*").order("created_at"),
       supabase.from("votes").select("*"),
       supabase.from("settings").select("*").eq("key", "voting_deadline").maybeSingle(),
+      supabase.from("settings").select("*").eq("key", "show_results").maybeSingle(),
     ]);
     setCandidates(c.data || []);
     setVotes(v.data || []);
     if (s.data) setDeadlineDate(new Date(s.data.value));
     else setDeadlineDate(new Date(import.meta.env.VITE_VOTING_DEADLINE));
+    if (r.data) setShowResSetting(r.data.value === "true");
   }, []);
 
   useEffect(() => { fetchAll().finally(() => setLoading(false)); }, []);
@@ -966,7 +991,7 @@ export default function App() {
     if (!session || !deadlineDate) return;
     const closed = Date.now() > deadlineDate;
     const showRes = localStorage.getItem("showResults") === "true";
-    if (session.hasVoted || closed || showRes) setScreen("results");
+    if (session.hasVoted || closed || showResSetting) setScreen("results");
     else setScreen("vote");
   }, [session, deadlineDate]);
 
@@ -975,7 +1000,7 @@ export default function App() {
     setSession(s); localStorage.setItem("vs26", JSON.stringify(s));
     const closed = deadlineDate && Date.now() > deadlineDate;
     const showRes = localStorage.getItem("showResults") === "true";
-    if (hasVoted || closed || showRes) setScreen("results");
+    if (hasVoted || closed || showResSetting) setScreen("results");
     else setScreen("vote");
   };
 
@@ -1007,11 +1032,11 @@ export default function App() {
       {orbs}
       <div style={{ position:"relative", zIndex:1 }}>
         {isAdmin
-          ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} />
+          ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
           : screen==="thankyou"
             ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} />
             : screen==="results"
-              ? <Results candidates={candidates} votes={votes} onLogout={doLogout} deadlineDate={deadlineDate} />
+              ? <Results candidates={candidates} votes={votes} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} isAdmin={false} />
               : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} deadlineDate={deadlineDate} />
         }
       </div>
