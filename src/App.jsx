@@ -44,7 +44,6 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const COMPANY_DOMAIN = import.meta.env.VITE_COMPANY_DOMAIN;
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
-const VOTING_DEADLINE = new Date(import.meta.env.VITE_VOTING_DEADLINE);
 const APP_TITLE = import.meta.env.VITE_APP_TITLE;
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -168,14 +167,15 @@ const GLOBAL_CSS = `
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function useCountdown() {
+function useCountdown(deadlineDate) {
   const calc = () => {
-    const d = VOTING_DEADLINE - Date.now();
+    if (!deadlineDate) return null;
+    const d = deadlineDate - Date.now();
     if (d <= 0) return null;
     return { days: Math.floor(d/86400000), hours: Math.floor((d%86400000)/3600000), minutes: Math.floor((d%3600000)/60000), seconds: Math.floor((d%60000)/1000) };
   };
   const [t, setT] = useState(calc);
-  useEffect(() => { const i = setInterval(() => setT(calc()), 1000); return () => clearInterval(i); }, []);
+  useEffect(() => { const i = setInterval(() => setT(calc()), 1000); return () => clearInterval(i); }, [deadlineDate]);
   return t;
 }
 
@@ -200,8 +200,8 @@ function TimerBox({ v, label }) {
   );
 }
 
-function Countdown() {
-  const t = useCountdown();
+function Countdown({ deadlineDate }) {
+  const t = useCountdown(deadlineDate);
   if (!t) return (
     <div style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"0.65rem 1.1rem", borderRadius:12, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontSize:13, fontWeight:500 }}>
       ⏰ Voting closed
@@ -248,7 +248,7 @@ function Login({ onLogin }) {
       const code = genOTP();
       setRealOTP(code);
       
-      const res = await fetch("http://localhost:3001/send-otp", {
+      const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: e, otp: code })
@@ -361,7 +361,7 @@ function Login({ onLogin }) {
         </div>
 
         <p className="fu2" style={{ textAlign:"center", marginTop:18, fontSize:12, color:"#3e3e5a" }}>
-          Deadline: {VOTING_DEADLINE.toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" })}
+          Voting App 2026
         </p>
       </div>
     </div>
@@ -373,16 +373,78 @@ function Login({ onLogin }) {
 function CCard({ c, selected, onSelect, cat }) {
   const color = cat === "boys" ? "#6366f1" : "#ec4899";
   return (
-    <div className={`c-card ${selected ? (cat==="boys"?"sel-b":"sel-g") : ""}`} onClick={onSelect}>
-      <div style={{ width:22, height:22, borderRadius:"50%", border:`2px solid ${selected ? color : "rgba(255,255,255,0.14)"}`, background: selected ? color : "transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.2s" }}>
-        {selected && <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff" }} />}
+    <div 
+      className={`poster-card ${selected ? (cat==="boys"?"sel-b":"sel-g") : ""}`} 
+      onClick={onSelect}
+      style={{
+        position: "relative",
+        borderRadius: 24,
+        overflow: "hidden",
+        background: "#121225",
+        border: `2px solid ${selected ? color : "rgba(255,255,255,0.05)"}`,
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        aspectRatio: "4/5",
+        boxShadow: selected ? `0 20px 40px ${color}33` : "0 10px 30px rgba(0,0,0,0.3)"
+      }}
+    >
+      {/* Background Poster Effect */}
+      <div style={{ position:"absolute", inset:0, opacity:0.1, background: `linear-gradient(45deg, ${color}, transparent)` }} />
+      
+      {/* Image Area */}
+      <div style={{ position:"relative", flex: 1, overflow:"hidden" }}>
+        {c.photo_url ? (
+          <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.5s" }} />
+        ) : (
+          <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", background:"#1a1a35" }}>
+            <span style={{ fontSize:60 }}>👤</span>
+          </div>
+        )}
+        
+        {/* Selection Checkmark */}
+        <div style={{ 
+          position: "absolute", top: 16, right: 16, 
+          width: 32, height: 32, borderRadius: "50%", 
+          background: selected ? color : "rgba(0,0,0,0.4)",
+          backdropFilter: "blur(8px)",
+          border: "2px solid rgba(255,255,255,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 10
+        }}>
+          {selected && <span style={{ color:"#fff", fontSize:18, fontWeight:900 }}>✓</span>}
+        </div>
       </div>
-      <div style={{ width:54, height:54, borderRadius:13, overflow:"hidden", flexShrink:0, background:"rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-        {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span style={{ fontSize:22 }}>👤</span>}
-      </div>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontWeight:600, fontSize:15, marginBottom:3 }}>{c.name}</div>
-        {c.bio && <div style={{ fontSize:12, color:"#5a5a7a", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.bio}</div>}
+
+      {/* Info Area */}
+      <div style={{ 
+        padding: "1.5rem", 
+        background: "linear-gradient(to top, #0a0a1a 80%, transparent)",
+        position: "relative",
+        textAlign: "center"
+      }}>
+        <div style={{ fontSize:10, fontWeight:800, color: color, letterSpacing:"0.2em", marginBottom:6, textTransform:"uppercase" }}>
+          VOTE FOR
+        </div>
+        <div style={{ 
+          fontWeight: 800, 
+          fontSize: 22, 
+          color: "#fff", 
+          marginBottom: 4,
+          lineHeight: 1.1,
+          textTransform: "uppercase"
+        }}>
+          {c.name}
+        </div>
+        <div style={{ 
+          fontSize: 12, 
+          color: "rgba(255,255,255,0.5)", 
+          fontWeight: 500,
+          fontStyle: "italic"
+        }}>
+          {c.bio || (cat === "boys" ? "Candidate for Boys" : "Candidate for Girls")}
+        </div>
       </div>
     </div>
   );
@@ -425,14 +487,14 @@ function VoteScreen({ email, candidates, onVoted, onLogout }) {
   }
 
   return (
-    <div style={{ maxWidth:660, margin:"0 auto", padding:"2rem 1.25rem" }}>
+    <div style={{ maxWidth:800, margin:"0 auto", padding:"2rem 1.25rem" }}>
       <div className="fu" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2.5rem", flexWrap:"wrap", gap:16 }}>
         <div>
           <h1 style={{ fontSize:26, fontWeight:700, marginBottom:6 }}>Cast Your Vote</h1>
           <div style={{ fontSize:13, color:"#5a5a7a" }}>As <span style={{ color:"#a5b4fc" }}>{email}</span></div>
         </div>
         <div style={{ display:"flex", alignItems:"flex-start", gap:14, flexWrap:"wrap" }}>
-          <Countdown />
+          <Countdown deadlineDate={deadlineDate} />
           <button className="btn-ghost" onClick={onLogout} style={{ marginTop:4 }}>↩ Logout</button>
         </div>
       </div>
@@ -446,7 +508,7 @@ function VoteScreen({ email, candidates, onVoted, onLogout }) {
         </div>
         {boys.length === 0
           ? <div style={{ padding:"1.25rem", textAlign:"center", color:"#3e3e5a", fontSize:13, borderRadius:14, border:"1px dashed rgba(255,255,255,0.07)" }}>No candidates yet</div>
-          : <div style={{ display:"flex", flexDirection:"column", gap:9 }}>{boys.map(c => <CCard key={c.id} c={c} selected={bVote===c.id} onSelect={() => setBVote(bVote===c.id?null:c.id)} cat="boys" />)}</div>
+          : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(180px, 1fr))", gap:16 }}>{boys.map(c => <CCard key={c.id} c={c} selected={bVote===c.id} onSelect={() => setBVote(bVote===c.id?null:c.id)} cat="boys" />)}</div>
         }
       </div>
 
@@ -461,7 +523,7 @@ function VoteScreen({ email, candidates, onVoted, onLogout }) {
         </div>
         {girls.length === 0
           ? <div style={{ padding:"1.25rem", textAlign:"center", color:"#3e3e5a", fontSize:13, borderRadius:14, border:"1px dashed rgba(255,255,255,0.07)" }}>No candidates yet</div>
-          : <div style={{ display:"flex", flexDirection:"column", gap:9 }}>{girls.map(c => <CCard key={c.id} c={c} selected={gVote===c.id} onSelect={() => setGVote(gVote===c.id?null:c.id)} cat="girls" />)}</div>
+          : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(180px, 1fr))", gap:16 }}>{girls.map(c => <CCard key={c.id} c={c} selected={gVote===c.id} onSelect={() => setGVote(gVote===c.id?null:c.id)} cat="girls" />)}</div>
         }
       </div>
 
@@ -496,9 +558,9 @@ function ThankYou({ onResults, onLogout }) {
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ candidates, votes, onLogout }) {
+function Results({ candidates, votes, onLogout, deadlineDate }) {
   const total = votes.length;
-  const closed = !useCountdown();
+  const closed = !useCountdown(deadlineDate);
 
   const getCount = (id) => votes.filter(v => v.boys_candidate_id === id || v.girls_candidate_id === id).length;
 
@@ -567,15 +629,23 @@ function Results({ candidates, votes, onLogout }) {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
-function Admin({ candidates, votes, refresh, onLogout }) {
+function Admin({ candidates, votes, refresh, onLogout, deadlineDate }) {
   const [tab, setTab] = useState("candidates");
   const [toast, setToast] = useState(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name:"", bio:"", category:"boys", file:null, preview:"" });
   const [busy, setBusy] = useState(false);
   const [showRes, setShowRes] = useState(() => localStorage.getItem("showResults")==="true");
+  const [newDeadline, setNewDeadline] = useState("");
+  const [isEditingDeadline, setIsEditingDeadline] = useState(false);
   const fileRef = useRef();
-  const deadline = useCountdown();
+  const deadline = useCountdown(deadlineDate);
+
+  useEffect(() => {
+    if (deadlineDate) {
+      setNewDeadline(new Date(deadlineDate.getTime() - deadlineDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+    }
+  }, [deadlineDate]);
 
   const showT = (msg, type="success") => setToast({ msg, type });
 
@@ -603,9 +673,20 @@ function Admin({ candidates, votes, refresh, onLogout }) {
   };
 
   const delCand = async (id) => {
-    if (!confirm("Delete this candidate?")) return;
-    await supabase.from("candidates").delete().eq("id",id);
-    showT("Deleted"); refresh();
+    if (!confirm("Delete this candidate? All votes for them will be removed. Continue?")) return;
+    try {
+      // Clear references in votes table to avoid foreign key errors
+      await supabase.from("votes").update({ boys_candidate_id: null }).eq("boys_candidate_id", id);
+      await supabase.from("votes").update({ girls_candidate_id: null }).eq("girls_candidate_id", id);
+      
+      const { error } = await supabase.from("candidates").delete().eq("id", id);
+      if (error) throw error;
+      
+      showT("Deleted");
+      refresh();
+    } catch (err) {
+      showT("Delete failed: " + err.message, "error");
+    }
   };
 
   const toggleShow = () => {
@@ -623,6 +704,18 @@ function Admin({ candidates, votes, refresh, onLogout }) {
     a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));
     a.download = "votes.csv"; a.click();
     showT("CSV downloaded");
+  };
+
+  const resetVotes = async () => {
+    if (!confirm("CRITICAL ACTION: This will completely delete ALL votes and reset the count to 0. This cannot be undone. Proceed?")) return;
+    try {
+      const { error } = await supabase.from("votes").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+      if (error) throw error;
+      showT("All votes have been reset to 0");
+      refresh();
+    } catch (err) {
+      showT("Reset failed: " + err.message, "error");
+    }
   };
 
   const getCount = (id) => votes.filter(v=>v.boys_candidate_id===id||v.girls_candidate_id===id).length;
@@ -758,13 +851,74 @@ function Admin({ candidates, votes, refresh, onLogout }) {
               <div style={{ position:"absolute", top:3, left: showRes?26:3, width:21, height:21, borderRadius:"50%", background:"#fff", transition:"left 0.3s", boxShadow:"0 2px 6px rgba(0,0,0,0.4)" }} />
             </div>
           </div>
+
           <div className="glass" style={{ borderRadius:15, padding:"1.1rem 1.25rem" }}>
-            <div style={{ fontWeight:600, marginBottom:5, fontSize:15 }}>Voting deadline</div>
-            <div style={{ color:"#a5b4fc", fontFamily:"'JetBrains Mono', monospace", fontSize:14 }}>{VOTING_DEADLINE.toLocaleString()}</div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div style={{ fontWeight:600, fontSize:15 }}>Voting Deadline</div>
+              {!isEditingDeadline && (
+                <button 
+                  className="tab-btn on" 
+                  style={{ fontSize:12, padding:"4px 12px" }}
+                  onClick={() => setIsEditingDeadline(true)}
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+
+            {isEditingDeadline ? (
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                <input 
+                  type="datetime-local" 
+                  className="inp" 
+                  style={{ width:"auto", flex:1, minWidth:200 }} 
+                  value={newDeadline} 
+                  onChange={e=>setNewDeadline(e.target.value)} 
+                />
+                <div style={{ display:"flex", gap:8 }}>
+                  <button 
+                    className="btn-pri" 
+                    style={{ width:"auto", padding:"0 1.2rem", fontSize:13 }}
+                    onClick={async () => {
+                      setBusy(true);
+                      const { error } = await supabase.from("settings").upsert({ key:"voting_deadline", value:new Date(newDeadline).toISOString() });
+                      if (error) showT("Failed: "+error.message, "error");
+                      else { showT("Deadline updated!"); refresh(); setIsEditingDeadline(false); }
+                      setBusy(false);
+                    }}
+                    disabled={busy}
+                  >
+                    {busy ? "..." : "Save"}
+                  </button>
+                  <button 
+                    className="btn-ghost" 
+                    style={{ padding:"0 1rem", fontSize:13 }}
+                    onClick={() => setIsEditingDeadline(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color:"#a5b4fc", fontFamily:"'JetBrains Mono', monospace", fontSize:15, background:"rgba(255,255,255,0.03)", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.05)" }}>
+                {deadlineDate ? deadlineDate.toLocaleString("en-IN", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "Not set"}
+              </div>
+            )}
           </div>
+
           <button className="btn-ghost" style={{ width:"fit-content", fontSize:14 }} onClick={()=>showT("📧 Results email simulated!","info")}>
             📤 Simulate Send Results Email
           </button>
+          
+          <div style={{ marginTop:20, paddingTop:20, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+            <button 
+              className="btn-del" 
+              style={{ width:"100%", padding:"1rem", fontSize:15, fontWeight:600 }} 
+              onClick={resetVotes}
+            >
+              ⚠️ Reset All Votes to 0
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -778,6 +932,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("vs26")) || null; } catch { return null; }
   });
   const [screen, setScreen] = useState("vote");
+  const [deadlineDate, setDeadlineDate] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [votes, setVotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -790,28 +945,31 @@ export default function App() {
   }, []);
 
   const fetchAll = useCallback(async () => {
-    const [c, v] = await Promise.all([
+    const [c, v, s] = await Promise.all([
       supabase.from("candidates").select("*").order("created_at"),
       supabase.from("votes").select("*"),
+      supabase.from("settings").select("*").eq("key", "voting_deadline").maybeSingle(),
     ]);
     setCandidates(c.data || []);
     setVotes(v.data || []);
+    if (s.data) setDeadlineDate(new Date(s.data.value));
+    else setDeadlineDate(new Date(import.meta.env.VITE_VOTING_DEADLINE));
   }, []);
 
   useEffect(() => { fetchAll().finally(() => setLoading(false)); }, []);
 
   useEffect(() => {
-    if (!session) return;
-    const closed = Date.now() > VOTING_DEADLINE;
+    if (!session || !deadlineDate) return;
+    const closed = Date.now() > deadlineDate;
     const showRes = localStorage.getItem("showResults") === "true";
     if (session.hasVoted || closed || showRes) setScreen("results");
     else setScreen("vote");
-  }, [session]);
+  }, [session, deadlineDate]);
 
   const doLogin = (email, hasVoted) => {
     const s = { email, hasVoted };
     setSession(s); localStorage.setItem("vs26", JSON.stringify(s));
-    const closed = Date.now() > VOTING_DEADLINE;
+    const closed = deadlineDate && Date.now() > deadlineDate;
     const showRes = localStorage.getItem("showResults") === "true";
     if (hasVoted || closed || showRes) setScreen("results");
     else setScreen("vote");
@@ -845,12 +1003,12 @@ export default function App() {
       {orbs}
       <div style={{ position:"relative", zIndex:1 }}>
         {isAdmin
-          ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} />
+          ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} />
           : screen==="thankyou"
             ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} />
             : screen==="results"
-              ? <Results candidates={candidates} votes={votes} onLogout={doLogout} />
-              : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} />
+              ? <Results candidates={candidates} votes={votes} onLogout={doLogout} deadlineDate={deadlineDate} />
+              : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} deadlineDate={deadlineDate} />
         }
       </div>
     </div>
