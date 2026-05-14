@@ -49,6 +49,7 @@ const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Vote, User, PartyPopper, FlagTriangleRight, Clock, Users, Trophy, Camera, Send, AlertTriangle, LogOut, X, Check, EyeOff, CheckCircle, Download, Mail, RotateCcw, Settings, BarChart3, UserPlus, Trash2, Lock, ShieldCheck, CalendarClock, Eye } from "https://esm.sh/lucide-react@0.454.0";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -218,7 +219,7 @@ function Countdown({ deadlineDate }) {
   const t = useCountdown(deadlineDate);
   if (!t) return (
     <div style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"0.65rem 1.1rem", borderRadius:12, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", color:"#f87171", fontSize:13, fontWeight:500 }}>
-      ⏰ Voting closed
+      <Clock size={14} /> Voting closed
     </div>
   );
   return (
@@ -314,7 +315,7 @@ function Login({ onLogin }) {
       <div style={{ width:"100%", maxWidth:420 }}>
         <div className="fu" style={{ textAlign:"center", marginBottom:"2.5rem" }}>
           <div style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:68, height:68, borderRadius:20, background:"linear-gradient(135deg, #6366f1, #8b5cf6)", marginBottom:18, boxShadow:"0 10px 36px rgba(99,102,241,0.45)" }} className="float">
-            <span style={{ fontSize:30 }}>🗳️</span>
+            <Vote size={30} color="#fff" />
           </div>
           <h1 style={{ fontSize:28, fontWeight:700, marginBottom:8 }}>{APP_TITLE}</h1>
           <p style={{ color:"#5a5a7a", fontSize:15 }}>Sign in with your company email</p>
@@ -342,7 +343,7 @@ function Login({ onLogin }) {
             </>
           ) : step === "password" ? (
             <>
-              <button onClick={() => { setStep("email"); setErr(""); setPassword(""); }} style={{ background:"none", border:"none", color:"#5a5a7a", fontSize:13, marginBottom:20, cursor:"pointer" }}>← Back</button>
+              <button onClick={() => { setStep("email"); setErr(""); setPassword(""); }} style={{ background:"none", border:"none", color:"#5a5a7a", fontSize:13, marginBottom:20, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}><LogOut size={13} style={{transform:"scaleX(-1)"}} /> Back</button>
               <div style={{ textAlign:"center", marginBottom:24 }}>
                 <p style={{ color:"#b0b0d0", fontSize:14, marginBottom:6 }}>Admin Login</p>
                 <p style={{ color:"#a5b4fc", fontWeight:600, marginBottom:14 }}>{email}</p>
@@ -361,7 +362,7 @@ function Login({ onLogin }) {
             </>
           ) : (
             <>
-              <button onClick={() => { setStep("email"); setErr(""); }} style={{ background:"none", border:"none", color:"#5a5a7a", fontSize:13, marginBottom:20, cursor:"pointer" }}>← Back</button>
+              <button onClick={() => { setStep("email"); setErr(""); }} style={{ background:"none", border:"none", color:"#5a5a7a", fontSize:13, marginBottom:20, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}><LogOut size={13} style={{transform:"scaleX(-1)"}} /> Back</button>
               <div style={{ textAlign:"center", marginBottom:24 }}>
                 <p style={{ color:"#b0b0d0", fontSize:14, marginBottom:6 }}>Enter the 6-digit code sent to</p>
                 <p style={{ color:"#a5b4fc", fontWeight:600, marginBottom:14 }}>{email}</p>
@@ -417,7 +418,7 @@ function CCard({ c, selected, onSelect, cat }) {
           <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.5s" }} />
         ) : (
           <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", background:"#1a1a35" }}>
-            <span style={{ fontSize:60 }}>👤</span>
+            <User size={60} color="#5a5a7a" />
           </div>
         )}
         
@@ -431,7 +432,7 @@ function CCard({ c, selected, onSelect, cat }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           zIndex: 10
         }}>
-          {selected && <span style={{ color:"#fff", fontSize:18, fontWeight:900 }}>✓</span>}
+          {selected && <Check size={18} color="#fff" strokeWidth={3} />}
         </div>
       </div>
 
@@ -495,10 +496,10 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
     return (
       <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"2rem" }}>
         <div>
-          <div style={{ fontSize:56, marginBottom:20 }}>🏁</div>
+          <FlagTriangleRight size={56} color="#f87171" style={{marginBottom:20}} />
           <h2 style={{ fontSize:24, fontWeight:700, marginBottom:10 }}>Voting has closed</h2>
           <p style={{ color:"#5a5a7a", marginBottom:24 }}>The deadline has passed. See the results below.</p>
-          <button className="btn-pri" onClick={onLogout}>Logout</button>
+          <button className="btn-pri" onClick={onLogout} style={{display:"inline-flex",alignItems:"center",gap:6}}><LogOut size={16} /> Logout</button>
         </div>
       </div>
     );
@@ -513,7 +514,7 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
         </div>
         <div style={{ display:"flex", alignItems:"flex-start", gap:14, flexWrap:"wrap" }}>
           <Countdown deadlineDate={deadlineDate} />
-          <button className="btn-ghost" onClick={onLogout} style={{ marginTop:4 }}>↩ Logout</button>
+          <button className="btn-ghost" onClick={onLogout} style={{ marginTop:4, display:"flex", alignItems:"center", gap:5 }}><LogOut size={14} /> Logout</button>
         </div>
       </div>
 
@@ -546,8 +547,8 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
       </div>
 
       {err && <div className="err-box" style={{ marginBottom:16 }}>{err}</div>}
-      <button className="btn-pri fu3" style={{ width:"100%", fontSize:16, padding:"1rem" }} onClick={submit} disabled={loading}>
-        {loading ? "Submitting…" : "Submit Vote ✓"}
+      <button className="btn-pri fu3" style={{ width:"100%", fontSize:16, padding:"1rem", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }} onClick={submit} disabled={loading}>
+        {loading ? "Submitting…" : <><Check size={18} /> Submit Vote</>}
       </button>
       <p style={{ textAlign:"center", fontSize:12, color:"#3e3e5a", marginTop:10 }}>You can only vote once. This cannot be undone.</p>
     </div>
@@ -560,14 +561,14 @@ function ThankYou({ onResults, onLogout, deadlineDate, showResSetting }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem" }}>
       <div style={{ textAlign:"center", maxWidth:420, width:"100%" }}>
-        <div style={{ fontSize:72, marginBottom:24 }} className="float">🎉</div>
+        <div style={{ marginBottom:24 }} className="float"><PartyPopper size={72} color="#a5b4fc" /></div>
         <h1 style={{ fontSize:"clamp(22px, 6vw, 30px)", fontWeight:700, marginBottom:12 }}>You Have Voted!</h1>
         <p style={{ color:"#5a5a7a", fontSize:15, lineHeight:1.7, marginBottom:12 }}>
           Your vote has been securely recorded. Thank you for participating!
         </p>
         
         <div className="glass" style={{ borderRadius:16, padding:"1.2rem", marginBottom:28 }}>
-          <div style={{ fontSize:20, marginBottom:6 }}>🤫</div>
+          <div style={{ marginBottom:6 }}><EyeOff size={20} color="#a5b4fc" /></div>
           <div style={{ fontWeight:600, fontSize:14, color:"#a5b4fc", marginBottom:4 }}>Results are not published yet</div>
           <div style={{ fontSize:13, color:"#5a5a7a" }}>
             Winners will be announced {deadlineDate ? "after " + deadlineDate.toLocaleDateString("en-IN", { day:"numeric", month:"long" }) : "soon"}.
@@ -609,12 +610,12 @@ function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, s
             <div key={c.id} className={`glass ${i===0&&c.count>0&&canSeeData?"glow-anim":""}`} style={{ borderRadius:18, padding:"1.2rem 1.35rem", position:"relative" }}>
               {i===0&&c.count>0&&canSeeData&&(
                 <div style={{ position:"absolute", top:-11, right:14, fontSize:11, fontWeight:700, padding:"3px 11px", borderRadius:999, background:gradient, color:"#fff", letterSpacing:"0.04em" }}>
-                  🏆 WINNER
+                  <Trophy size={12} style={{display:"inline",verticalAlign:"middle",marginRight:3}} /> WINNER
                 </div>
               )}
               <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:canSeeData?12:0 }}>
                 <div style={{ width:46, height:46, borderRadius:12, overflow:"hidden", background:"rgba(255,255,255,0.06)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>👤</span>}
+                  {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <User size={20} color="#5a5a7a" />}
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:600, fontSize:15 }}>{c.name}</div>
@@ -641,12 +642,12 @@ function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, s
           <h1 style={{ fontSize:26, fontWeight:700, marginBottom:6 }}>Results</h1>
           <div style={{ fontSize:13, color:"#5a5a7a" }}>{total} total vote{total!==1?"s":""}</div>
         </div>
-        <button className="btn-ghost" onClick={onLogout}>↩ Logout</button>
+        <button className="btn-ghost" onClick={onLogout} style={{display:"flex",alignItems:"center",gap:5}}><LogOut size={14} /> Logout</button>
       </div>
 
       {!canSeeData && (
         <div className="fu1" style={{ padding:"1.5rem", borderRadius:18, background:"rgba(99,102,241,0.06)", border:"1px solid rgba(99,102,241,0.12)", color:"#a5b4fc", textAlign:"center", marginBottom:30 }}>
-          <div style={{ fontSize:32, marginBottom:10 }}>🤫</div>
+          <div style={{ marginBottom:10 }}><EyeOff size={32} color="#a5b4fc" /></div>
           <div style={{ fontWeight:600, fontSize:18, marginBottom:4 }}>Results are hidden</div>
           <div style={{ fontSize:14, opacity:0.7 }}>The final winners will be announced soon!</div>
         </div>
@@ -654,7 +655,7 @@ function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, s
 
       {closed && canSeeData && (
         <div className="fu1" style={{ padding:"0.75rem 1.1rem", borderRadius:12, background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", color:"#6ee7b7", fontSize:13, marginBottom:24 }}>
-          ✅ Voting closed — these are the final results
+          <CheckCircle size={14} style={{display:"inline",verticalAlign:"middle",marginRight:4}} /> Voting closed — these are the final results
         </div>
       )}
 
@@ -778,14 +779,14 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
           <div style={{ fontSize:11, color:"#6366f1", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:5 }}>Admin Dashboard</div>
           <h1 style={{ fontSize:24, fontWeight:700 }}>Manage Voting</h1>
         </div>
-        <button className="btn-ghost" onClick={onLogout}>↩ Logout</button>
+        <button className="btn-ghost" onClick={onLogout} style={{display:"flex",alignItems:"center",gap:5}}><LogOut size={14} /> Logout</button>
       </div>
 
       {/* Stats */}
       <div className="fu1" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:10, marginBottom:22 }}>
-        {[{label:"Total Votes",val:votes.length,icon:"🗳️"},{label:"Candidates",val:candidates.length,icon:"👥"},{label:"Time Left",val:deadline?`${deadline.days}d ${deadline.hours}h`:"Closed",icon:"⏰"}].map(s=>(
+        {[{label:"Total Votes",val:Object.values(votes).reduce((a,b)=>a+b,0),icon:<Vote size={20} color="#a5b4fc" />},{label:"Candidates",val:candidates.length,icon:<Users size={20} color="#a5b4fc" />},{label:"Time Left",val:deadline?`${deadline.days}d ${deadline.hours}h`:"Closed",icon:<Clock size={20} color="#a5b4fc" />}].map(s=>(
           <div key={s.label} className="glass" style={{ borderRadius:15, padding:"1rem 1.15rem" }}>
-            <div style={{ fontSize:20, marginBottom:5 }}>{s.icon}</div>
+            <div style={{ marginBottom:5 }}>{s.icon}</div>
             <div style={{ fontSize:21, fontWeight:700, marginBottom:2 }}>{s.val}</div>
             <div style={{ fontSize:11, color:"#5a5a7a" }}>{s.label}</div>
           </div>
@@ -804,7 +805,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
         <div>
           <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
             <button className="btn-pri" style={{ width:"auto", padding:"0.6rem 1.2rem", fontSize:14 }} onClick={()=>setAdding(!adding)}>
-              {adding ? "✕ Cancel" : "+ Add Candidate"}
+              {adding ? <><X size={14} /> Cancel</> : <><UserPlus size={14} /> Add Candidate</>}
             </button>
           </div>
 
@@ -821,7 +822,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
                 <div className="upload-area" onClick={()=>fileRef.current.click()}>
                   {form.preview
                     ? <img src={form.preview} alt="preview" style={{ maxHeight:110, borderRadius:10 }} />
-                    : <><div style={{ fontSize:28, marginBottom:6 }}>📷</div><div style={{ color:"#5a5a7a", fontSize:13 }}>Click to upload photo</div></>
+                    : <><Camera size={28} color="#5a5a7a" style={{marginBottom:6}} /><div style={{ color:"#5a5a7a", fontSize:13 }}>Click to upload photo</div></>
                   }
                   <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={pickFile} />
                 </div>
@@ -843,14 +844,14 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
                 : candidates.filter(c=>c.category===cat).map(c=>(
                   <div key={c.id} className="glass" style={{ borderRadius:13, padding:"0.9rem 1.1rem", display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
                     <div style={{ width:42, height:42, borderRadius:10, overflow:"hidden", background:"rgba(255,255,255,0.06)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>👤</span>}
+                      {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <User size={20} color="#5a5a7a" />}
                     </div>
                     <div style={{ flex:1 }}>
                       <div style={{ fontWeight:500, fontSize:14 }}>{c.name}</div>
                       {c.bio&&<div style={{ fontSize:12, color:"#5a5a7a" }}>{c.bio}</div>}
                     </div>
                     <div style={{ fontSize:13, color:"#5a5a7a", marginRight:10 }}>{getCount(c.id)} votes</div>
-                    <button className="btn-del" onClick={()=>delCand(c.id)}>Delete</button>
+                    <button className="btn-del" onClick={()=>delCand(c.id)} style={{display:"flex",alignItems:"center",gap:4}}><Trash2 size={13} /> Delete</button>
                   </div>
                 ))
               }
@@ -864,7 +865,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18, flexWrap:"wrap", gap:10 }}>
             <h3 style={{ fontWeight:600 }}>Live Vote Counts</h3>
-            <button className="btn-ghost" style={{ fontSize:13, padding:"0.5rem 0.9rem" }} onClick={dlCSV}>⬇ Download CSV</button>
+            <button className="btn-ghost" style={{ fontSize:13, padding:"0.5rem 0.9rem", display:"flex", alignItems:"center", gap:5 }} onClick={dlCSV}><Download size={14} /> Download CSV</button>
           </div>
           {["boys","girls"].map(cat=>{
             const gradient = cat==="boys"?"linear-gradient(90deg,#6366f1,#8b5cf6)":"linear-gradient(90deg,#ec4899,#f97316)";
@@ -876,7 +877,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
                 {list.map((c,i)=>(
                   <div key={c.id} style={{ marginBottom:12 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
-                      <span style={{ fontWeight: i===0?600:400 }}>{i===0&&c.count>0?"🏆 ":""}{c.name}</span>
+                      <span style={{ fontWeight: i===0?600:400 }}>{i===0&&c.count>0?<Trophy size={13} style={{display:"inline",verticalAlign:"middle",marginRight:3}} />:""}{c.name}</span>
                       <span style={{ color:"#5a5a7a" }}>{c.count} ({votes.length>0?Math.round(c.count/votes.length*100):0}%)</span>
                     </div>
                     <div className="bar-track"><div className="bar-fill" style={{ width:`${(c.count/max)*100}%`, background:gradient }} /></div>
@@ -955,8 +956,8 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
             )}
           </div>
 
-          <button className="btn-ghost" style={{ width:"fit-content", fontSize:14 }} onClick={()=>showT("📧 Results email simulated!","info")}>
-            📤 Simulate Send Results Email
+          <button className="btn-ghost" style={{ width:"fit-content", fontSize:14, display:"flex", alignItems:"center", gap:6 }} onClick={()=>showT("Results email simulated!","info")}>
+            <Send size={14} /> Simulate Send Results Email
           </button>
           
           <div style={{ marginTop:20, paddingTop:20, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
@@ -965,7 +966,7 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
               style={{ width:"100%", padding:"1rem", fontSize:15, fontWeight:600 }} 
               onClick={resetVotes}
             >
-              ⚠️ Reset All Votes to 0
+              <AlertTriangle size={16} style={{display:"inline",verticalAlign:"middle",marginRight:4}} /> Reset All Votes to 0
             </button>
           </div>
         </div>
