@@ -452,12 +452,12 @@ function CCard({ c, selected, onSelect, cat }) {
 
 // ─── Vote Screen ──────────────────────────────────────────────────────────────
 
-function VoteScreen({ email, candidates, onVoted, onLogout }) {
+function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
   const [bVote, setBVote] = useState(null);
   const [gVote, setGVote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const deadline = useCountdown();
+  const deadline = useCountdown(deadlineDate);
 
   const boys = candidates.filter(c => c.category === "boys");
   const girls = candidates.filter(c => c.category === "girls");
@@ -538,14 +538,14 @@ function VoteScreen({ email, candidates, onVoted, onLogout }) {
 
 // ─── Thank You ────────────────────────────────────────────────────────────────
 
-function ThankYou({ onResults, onLogout }) {
+function ThankYou({ onResults, onLogout, deadlineDate }) {
   return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
       <div style={{ textAlign:"center", maxWidth:400 }}>
         <div style={{ fontSize:72, marginBottom:24 }} className="float">🎉</div>
         <h1 style={{ fontSize:30, fontWeight:700, marginBottom:12 }}>Vote Submitted!</h1>
         <p style={{ color:"#5a5a7a", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
-          Your vote is securely saved. Results will show after the deadline on {VOTING_DEADLINE.toLocaleDateString("en-IN", { day:"numeric", month:"long" })}.
+          Your vote is securely saved. Results will show after the deadline on {deadlineDate ? deadlineDate.toLocaleDateString("en-IN", { day:"numeric", month:"long" }) : "the deadline"}.
         </p>
         <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
           <button className="btn-pri" onClick={onResults}>View Results</button>
@@ -1005,7 +1005,7 @@ export default function App() {
         {isAdmin
           ? <Admin candidates={candidates} votes={votes} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} />
           : screen==="thankyou"
-            ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} />
+            ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} />
             : screen==="results"
               ? <Results candidates={candidates} votes={votes} onLogout={doLogout} deadlineDate={deadlineDate} />
               : <VoteScreen email={session.email} candidates={candidates} onVoted={doVoted} onLogout={doLogout} deadlineDate={deadlineDate} />
