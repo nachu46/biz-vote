@@ -49,7 +49,7 @@ const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Vote, User, PartyPopper, FlagTriangleRight, Clock, Users, Trophy, Camera, Send, AlertTriangle, LogOut, X, Check, EyeOff, CheckCircle, Download, Mail, RotateCcw, Settings, BarChart3, UserPlus, Trash2, Lock, ShieldCheck, CalendarClock, Eye } from "https://esm.sh/lucide-react@0.454.0";
+import { Vote, User, PartyPopper, FlagTriangleRight, Clock, Users, Trophy, Camera, Send, AlertTriangle, LogOut, X, Check, EyeOff, CheckCircle, Download, Mail, RotateCcw, Settings, BarChart3, UserPlus, Trash2, Lock, ShieldCheck, CalendarClock, Eye, Radio, Activity } from "https://esm.sh/lucide-react@0.454.0";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -166,6 +166,11 @@ const GLOBAL_CSS = `
   .err-box { color: #f87171; font-size: 13px; padding: 0.7rem 1rem; background: rgba(239,68,68,0.08); border-radius: 10px; border: 1px solid rgba(239,68,68,0.18); }
   .timer-d { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); border-radius: 13px; padding: 0.7rem 0.55rem; min-width: 62px; text-align: center; }
 
+  @keyframes livePulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation: livePulse 1.5s ease-in-out infinite; }
+  .voter-item { animation: slideIn 0.35s ease both; }
+
   /* ─── Responsive ─── */
   @media (max-width: 600px) {
     .otp-in { width: 42px; height: 52px; font-size: 20px; border-radius: 10px; }
@@ -177,6 +182,20 @@ const GLOBAL_CSS = `
     .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
     .timer-d { min-width: 48px; padding: 0.5rem 0.35rem; }
     .timer-d > div:first-child { font-size: 20px; }
+  }
+
+  /* ─── Desktop ─── */
+  @media (min-width: 1024px) {
+    .admin-wrap { max-width: 960px !important; padding: 2.5rem 2rem !important; }
+    .admin-stats { grid-template-columns: repeat(4, 1fr) !important; gap: 14px !important; }
+    .admin-stats .glass { padding: 1.3rem 1.4rem !important; }
+    .admin-tabs { gap: 6px !important; padding: 6px !important; }
+    .admin-tabs .tab-btn { padding: 0.65rem 1.3rem !important; font-size: 15px !important; }
+    .voter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  }
+  @media (min-width: 1280px) {
+    .admin-wrap { max-width: 1100px !important; padding: 3rem 2.5rem !important; }
+    .voter-grid { grid-template-columns: repeat(3, 1fr); }
   }
 `;
 
@@ -668,7 +687,7 @@ function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, s
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
-function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSetting }) {
+function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, showResSetting }) {
   const [tab, setTab] = useState("candidates");
   const [toast, setToast] = useState(null);
   const [adding, setAdding] = useState(false);
@@ -771,19 +790,19 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
   const getCount = (id) => votes[id] || 0;
 
   return (
-    <div style={{ maxWidth:700, margin:"0 auto", padding:"2rem 1.25rem" }}>
+    <div className="admin-wrap" style={{ maxWidth:700, margin:"0 auto", padding:"2rem 1.25rem" }}>
       {toast && <Toast msg={toast.msg} type={toast.type} onDone={()=>setToast(null)} />}
 
-      <div className="fu" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"2rem", flexWrap:"wrap", gap:12 }}>
+      <div className="fu admin-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"2rem", flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={{ fontSize:11, color:"#6366f1", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:5 }}>Admin Dashboard</div>
-          <h1 style={{ fontSize:24, fontWeight:700 }}>Manage Voting</h1>
+          <h1 className="admin-header" style={{ fontSize:24, fontWeight:700 }}>Manage Voting</h1>
         </div>
         <button className="btn-ghost" onClick={onLogout} style={{display:"flex",alignItems:"center",gap:5}}><LogOut size={14} /> Logout</button>
       </div>
 
       {/* Stats */}
-      <div className="fu1" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:10, marginBottom:22 }}>
+      <div className="fu1 admin-stats" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:10, marginBottom:22 }}>
         {[{label:"Total Votes",val:Object.values(votes).reduce((a,b)=>a+b,0),icon:<Vote size={20} color="#a5b4fc" />},{label:"Candidates",val:candidates.length,icon:<Users size={20} color="#a5b4fc" />},{label:"Time Left",val:deadline?`${deadline.days}d ${deadline.hours}h`:"Closed",icon:<Clock size={20} color="#a5b4fc" />}].map(s=>(
           <div key={s.label} className="glass" style={{ borderRadius:15, padding:"1rem 1.15rem" }}>
             <div style={{ marginBottom:5 }}>{s.icon}</div>
@@ -794,9 +813,12 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
       </div>
 
       {/* Tabs */}
-      <div className="fu2" style={{ display:"flex", gap:5, marginBottom:22, background:"rgba(255,255,255,0.03)", borderRadius:13, padding:5, width:"fit-content" }}>
-        {["candidates","results","settings"].map(t=>(
-          <button key={t} className={`tab-btn ${tab===t?"on":""}`} onClick={()=>setTab(t)} style={{ textTransform:"capitalize" }}>{t}</button>
+      <div className="fu2 admin-tabs" style={{ display:"flex", gap:5, marginBottom:22, background:"rgba(255,255,255,0.03)", borderRadius:13, padding:5, width:"fit-content" }}>
+        {["candidates","voters","results","settings"].map(t=>(
+          <button key={t} className={`tab-btn ${tab===t?"on":""}`} onClick={()=>setTab(t)} style={{ textTransform:"capitalize", display:"flex", alignItems:"center", gap:5 }}>
+            {t === "voters" && <div className="live-dot" />}
+            {t}
+          </button>
         ))}
       </div>
 
@@ -857,6 +879,72 @@ function Admin({ candidates, votes, refresh, onLogout, deadlineDate, showResSett
               }
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Voters tab — Live feed */}
+      {tab==="voters"&&(
+        <div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18, flexWrap:"wrap", gap:10 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div className="live-dot" />
+              <h3 style={{ fontWeight:600 }}>Live Voter Feed</h3>
+              <span style={{ fontSize:12, color:"#5a5a7a", background:"rgba(255,255,255,0.04)", padding:"3px 10px", borderRadius:999, border:"1px solid rgba(255,255,255,0.07)" }}>
+                {voterList.length} voter{voterList.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <button className="btn-ghost" style={{ fontSize:13, padding:"0.5rem 0.9rem", display:"flex", alignItems:"center", gap:5 }} onClick={refresh}>
+              <RotateCcw size={13} /> Refresh
+            </button>
+          </div>
+
+          {voterList.length === 0 ? (
+            <div className="glass" style={{ borderRadius:16, padding:"2.5rem 1.5rem", textAlign:"center" }}>
+              <Activity size={36} color="#3e3e5a" style={{ marginBottom:12 }} />
+              <div style={{ fontWeight:600, fontSize:16, color:"#5a5a7a", marginBottom:4 }}>No votes yet</div>
+              <div style={{ fontSize:13, color:"#3e3e5a" }}>Votes will appear here in real-time as they come in</div>
+            </div>
+          ) : (
+            <div className="voter-grid">
+              {voterList.map((v, i) => {
+                const timeDiff = Date.now() - new Date(v.voted_at).getTime();
+                const isRecent = timeDiff < 30000;
+                const timeAgo = timeDiff < 60000 ? "just now"
+                  : timeDiff < 3600000 ? `${Math.floor(timeDiff/60000)}m ago`
+                  : timeDiff < 86400000 ? `${Math.floor(timeDiff/3600000)}h ago`
+                  : new Date(v.voted_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+                return (
+                  <div key={v.voter_email} className={`glass voter-item`}
+                    style={{
+                      borderRadius:14, padding:"0.85rem 1.1rem",
+                      display:"flex", alignItems:"center", gap:12,
+                      animationDelay: `${i * 0.04}s`,
+                      border: isRecent ? "1px solid rgba(16,185,129,0.25)" : undefined,
+                      background: isRecent ? "rgba(16,185,129,0.06)" : undefined,
+                    }}
+                  >
+                    <div style={{
+                      width:38, height:38, borderRadius:10,
+                      background: `linear-gradient(135deg, hsl(${(v.voter_email.charCodeAt(0)*7)%360}, 60%, 45%), hsl(${(v.voter_email.charCodeAt(0)*7+40)%360}, 50%, 55%))`,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:15, fontWeight:700, color:"#fff", flexShrink:0, textTransform:"uppercase"
+                    }}>
+                      {v.voter_email.charAt(0)}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:500, fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.voter_email}</div>
+                      <div style={{ fontSize:11, color:"#5a5a7a", display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
+                        <CheckCircle size={11} color="#10b981" /> Voted
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, color: isRecent ? "#6ee7b7" : "#3e3e5a", whiteSpace:"nowrap", flexShrink:0 }}>
+                      {timeAgo}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -987,6 +1075,7 @@ export default function App() {
   const [candidates, setCandidates] = useState([]);
   const [voteCounts, setVoteCounts] = useState({});
   const [totalVotes, setTotalVotes] = useState(0);
+  const [voterList, setVoterList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -997,11 +1086,12 @@ export default function App() {
   }, []);
 
   const fetchAll = useCallback(async () => {
-    const [c, v, s, r] = await Promise.all([
+    const [c, v, s, r, vl] = await Promise.all([
       supabase.from("candidates").select("*").order("created_at"),
       supabase.from("vote_counts").select("*"),
       supabase.from("settings").select("*").eq("key", "voting_deadline").maybeSingle(),
       supabase.from("settings").select("*").eq("key", "show_results").maybeSingle(),
+      supabase.from("votes").select("voter_email, voted_at").order("voted_at", { ascending: false }),
     ]);
     setCandidates(c.data || []);
     
@@ -1017,9 +1107,37 @@ export default function App() {
     if (s.data) setDeadlineDate(new Date(s.data.value));
     else setDeadlineDate(new Date(import.meta.env.VITE_VOTING_DEADLINE));
     if (r.data) setShowResSetting(r.data.value === "true");
+    setVoterList(vl.data || []);
   }, []);
 
   useEffect(() => { fetchAll().finally(() => setLoading(false)); }, []);
+
+  // ─── Realtime subscription: auto-refresh when new votes come in ───
+  useEffect(() => {
+    const channel = supabase
+      .channel("votes-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "votes" },
+        () => {
+          // A new vote was cast — refresh all data
+          fetchAll();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "votes" },
+        () => {
+          // Votes were reset — refresh all data
+          fetchAll();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAll]);
 
   useEffect(() => {
     if (!session || !deadlineDate) return;
@@ -1066,7 +1184,7 @@ export default function App() {
       {orbs}
       <div style={{ position:"relative", zIndex:1 }}>
         {isAdmin
-          ? <Admin candidates={candidates} votes={voteCounts} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
+          ? <Admin candidates={candidates} votes={voteCounts} voterList={voterList} refresh={fetchAll} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
           : screen==="thankyou"
             ? <ThankYou onResults={()=>setScreen("results")} onLogout={doLogout} deadlineDate={deadlineDate} showResSetting={showResSetting} />
             : screen==="results"
