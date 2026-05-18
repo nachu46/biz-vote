@@ -40,7 +40,20 @@ app.post('/send-otp', (req, res) => {
   res.json({ success: true });
 });
 
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Email server running on http://localhost:${PORT}`);
+  
+  // Keep-alive ping to prevent the server from sleeping (34 minutes)
+  const PING_INTERVAL = 34 * 60 * 1000;
+  setInterval(() => {
+    const url = process.env.SERVER_URL || `http://localhost:${PORT}`;
+    fetch(`${url}/ping`)
+      .then(res => console.log(`[Keep-alive] Pinged server, status: ${res.status}`))
+      .catch(err => console.error(`[Keep-alive] Ping failed:`, err.message));
+  }, PING_INTERVAL);
 });
