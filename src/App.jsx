@@ -270,6 +270,7 @@ function Login({ onLogin }) {
     setErr("");
     const e = email.trim().toLowerCase();
     if (!e) return setErr("Please enter your email.");
+    if (e.includes("+")) return setErr("Email addresses with '+' are not allowed.");
     if (e === ADMIN_EMAIL.toLowerCase()) {
       setStep("password");
       return;
