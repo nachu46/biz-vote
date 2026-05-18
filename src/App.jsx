@@ -848,12 +848,17 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
   };
 
   const dlCSV = () => {
-    const rows = [["Email","Boys","Girls","Time"]];
+    const esc = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
+    const rows = [[esc("Email"), esc("Men"), esc("Women"), esc("Time")]];
     voterList.forEach(v => {
-      rows.push([v.voter_email, candidates.find(c=>c.id===v.boys_candidate_id)?.name||"—", candidates.find(c=>c.id===v.girls_candidate_id)?.name||"—", new Date(v.voted_at).toLocaleString()]);
+      const email = esc(v.voter_email);
+      const men = esc(candidates.find(c=>c.id===v.boys_candidate_id)?.name||"—");
+      const women = esc(candidates.find(c=>c.id===v.girls_candidate_id)?.name||"—");
+      const time = esc(new Date(v.voted_at).toLocaleString());
+      rows.push([email, men, women, time]);
     });
     const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));
+    a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\r\n"));
     a.download = "votes.csv"; a.click();
     showT("CSV downloaded");
   };
