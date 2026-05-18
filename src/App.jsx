@@ -481,7 +481,7 @@ function CCard({ c, selected, onSelect, cat }) {
           fontWeight: 500,
           fontStyle: "italic"
         }}>
-          {c.bio || (cat === "boys" ? "Candidate for Boys" : "Candidate for Girls")}
+          {c.bio || (cat === "boys" ? "Male Candidate" : "Female Candidate")}
         </div>
       </div>
     </div>
@@ -545,7 +545,7 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
       <div className="fu1" style={{ marginBottom:"2rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:14 }}>
           <div style={{ width:9, height:9, borderRadius:"50%", background:"#6366f1" }} />
-          <h2 style={{ fontSize:17, fontWeight:600 }}>Boys Category</h2>
+          <h2 style={{ fontSize:17, fontWeight:600 }}>Men's Category</h2>
           <span style={{ fontSize:11, color:"#6366f1", background:"rgba(99,102,241,0.12)", padding:"3px 10px", borderRadius:999, border:"1px solid rgba(99,102,241,0.2)" }}>Pick one</span>
         </div>
         {boys.length === 0
@@ -560,7 +560,7 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
       <div className="fu2" style={{ marginBottom:"2rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:14 }}>
           <div style={{ width:9, height:9, borderRadius:"50%", background:"#ec4899" }} />
-          <h2 style={{ fontSize:17, fontWeight:600 }}>Girls Category</h2>
+          <h2 style={{ fontSize:17, fontWeight:600 }}>Women's Category</h2>
           <span style={{ fontSize:11, color:"#ec4899", background:"rgba(236,72,153,0.12)", padding:"3px 10px", borderRadius:999, border:"1px solid rgba(236,72,153,0.2)" }}>Pick one</span>
         </div>
         {girls.length === 0
@@ -626,7 +626,7 @@ function Results({ candidates, voteCounts, totalVotes, onLogout, deadlineDate, s
       <div style={{ marginBottom:"2.5rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:18 }}>
           <div style={{ width:9, height:9, borderRadius:"50%", background:color }} />
-          <h2 style={{ fontSize:18, fontWeight:600 }}>{cat === "boys" ? "Boys" : "Girls"} Category</h2>
+          <h2 style={{ fontSize:18, fontWeight:600 }}>{cat === "boys" ? "Men's" : "Women's"} Category</h2>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           {list.map((c, i) => (
@@ -842,8 +842,8 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
                 <input className="inp" placeholder="Full name *" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} />
                 <input className="inp" placeholder="Short bio (optional)" value={form.bio} onChange={e=>setForm(p=>({...p,bio:e.target.value}))} />
                 <select className="inp" value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))}>
-                  <option value="boys">Boys Category</option>
-                  <option value="girls">Girls Category</option>
+                  <option value="boys">Men's Category</option>
+                  <option value="girls">Women's Category</option>
                 </select>
                 <div className="upload-area" onClick={()=>fileRef.current.click()}>
                   {form.preview
@@ -863,7 +863,7 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
             <div key={cat} style={{ marginBottom:22 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:11 }}>
                 <div style={{ width:8, height:8, borderRadius:"50%", background: cat==="boys"?"#6366f1":"#ec4899" }} />
-                <h3 style={{ fontWeight:600, fontSize:15 }}>{cat === "boys" ? "Boys" : "Girls"} Candidates</h3>
+                <h3 style={{ fontWeight:600, fontSize:15 }}>{cat === "boys" ? "Men's" : "Women's"} Candidates</h3>
               </div>
               {candidates.filter(c=>c.category===cat).length===0
                 ? <div style={{ padding:"1.1rem", textAlign:"center", color:"#3e3e5a", fontSize:13, borderRadius:13, border:"1px dashed rgba(255,255,255,0.06)" }}>No candidates yet</div>
@@ -965,7 +965,7 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
             const max = Math.max(...list.map(c=>c.count),1);
             return (
               <div key={cat} style={{ marginBottom:26 }}>
-                <h4 style={{ fontWeight:600, marginBottom:12, fontSize:14, color: cat==="boys"?"#a5b4fc":"#f9a8d4", textTransform:"uppercase", letterSpacing:"0.06em" }}>{cat}</h4>
+                <h4 style={{ fontWeight:600, marginBottom:12, fontSize:14, color: cat==="boys"?"#a5b4fc":"#f9a8d4", textTransform:"uppercase", letterSpacing:"0.06em" }}>{cat === "boys" ? "Men" : "Women"}</h4>
                 {list.map((c,i)=>(
                   <div key={c.id} style={{ marginBottom:12 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
