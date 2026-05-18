@@ -270,7 +270,12 @@ function Login({ onLogin }) {
     setErr("");
     const e = email.trim().toLowerCase();
     if (!e) return setErr("Please enter your email.");
-    if (e.includes("+")) return setErr("Email addresses with '+' are not allowed.");
+    const parts = e.split("@");
+    if (parts.length !== 2) return setErr("Please enter a valid email.");
+    const [localPart] = parts;
+    if (!/^[a-z0-9._]+$/.test(localPart)) {
+      return setErr("Email username can only contain letters, numbers, dots (.), and underscores (_).");
+    }
     if (e === ADMIN_EMAIL.toLowerCase()) {
       setStep("password");
       return;
