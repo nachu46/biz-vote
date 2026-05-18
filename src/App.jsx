@@ -813,10 +813,10 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
 
       {/* Stats */}
       <div className="fu1 admin-stats" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:10, marginBottom:22 }}>
-        {[{label:"Total Votes",val:Object.values(votes).reduce((a,b)=>a+b,0),icon:<Vote size={20} color="#a5b4fc" />},{label:"Candidates",val:candidates.length,icon:<Users size={20} color="#a5b4fc" />},{label:"Time Left",val:deadline?`${deadline.days}d ${deadline.hours}h`:"Closed",icon:<Clock size={20} color="#a5b4fc" />}].map(s=>(
+        {[{label:"Total Votes",val:Object.values(votes).reduce((a,b)=>a+b,0),icon:<Vote size={20} color="#a5b4fc" />},{label:"Candidates",val:candidates.length,icon:<Users size={20} color="#a5b4fc" />},{label:"Time Left",val:deadline?`${deadline.days}d ${deadline.hours}h ${deadline.minutes}m ${deadline.seconds}s`:"Closed",icon:<Clock size={20} color="#a5b4fc" />}].map(s=>(
           <div key={s.label} className="glass" style={{ borderRadius:15, padding:"1rem 1.15rem" }}>
             <div style={{ marginBottom:5 }}>{s.icon}</div>
-            <div style={{ fontSize:21, fontWeight:700, marginBottom:2 }}>{s.val}</div>
+            <div style={{ fontSize:21, fontWeight:700, marginBottom:2, fontVariantNumeric:"tabular-nums" }}>{s.val}</div>
             <div style={{ fontSize:11, color:"#5a5a7a" }}>{s.label}</div>
           </div>
         ))}
