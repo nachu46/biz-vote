@@ -776,7 +776,7 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
 
   const dlCSV = () => {
     const rows = [["Email","Boys","Girls","Time"]];
-    votes.forEach(v => {
+    voterList.forEach(v => {
       rows.push([v.voter_email, candidates.find(c=>c.id===v.boys_candidate_id)?.name||"—", candidates.find(c=>c.id===v.girls_candidate_id)?.name||"—", new Date(v.voted_at).toLocaleString()]);
     });
     const a = document.createElement("a");
@@ -969,6 +969,7 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
             const gradient = cat==="boys"?"linear-gradient(90deg,#6366f1,#8b5cf6)":"linear-gradient(90deg,#ec4899,#f97316)";
             const list = candidates.filter(c=>c.category===cat).map(c=>({...c,count:getCount(c.id)})).sort((a,b)=>b.count-a.count);
             const max = Math.max(...list.map(c=>c.count),1);
+            const catTotal = list.reduce((sum, item) => sum + item.count, 0);
             return (
               <div key={cat} style={{ marginBottom:26 }}>
                 <h4 style={{ fontWeight:600, marginBottom:12, fontSize:14, color: cat==="boys"?"#a5b4fc":"#f9a8d4", textTransform:"uppercase", letterSpacing:"0.06em" }}>{cat === "boys" ? "Men" : "Women"}</h4>
@@ -976,7 +977,7 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
                   <div key={c.id} style={{ marginBottom:12 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
                       <span style={{ fontWeight: i===0?600:400 }}>{i===0&&c.count>0?<Trophy size={13} style={{display:"inline",verticalAlign:"middle",marginRight:3}} />:""}{c.name}</span>
-                      <span style={{ color:"#5a5a7a" }}>{c.count} ({votes.length>0?Math.round(c.count/votes.length*100):0}%)</span>
+                      <span style={{ color:"#5a5a7a" }}>{c.count} ({catTotal>0?Math.round(c.count/catTotal*100):0}%)</span>
                     </div>
                     <div className="bar-track"><div className="bar-fill" style={{ width:`${(c.count/max)*100}%`, background:gradient }} /></div>
                   </div>
@@ -1101,7 +1102,7 @@ export default function App() {
       supabase.from("vote_counts").select("*"),
       supabase.from("settings").select("*").eq("key", "voting_deadline").maybeSingle(),
       supabase.from("settings").select("*").eq("key", "show_results").maybeSingle(),
-      supabase.from("votes").select("voter_email, voted_at").order("voted_at", { ascending: false }),
+      supabase.from("votes").select("voter_email, voted_at, boys_candidate_id, girls_candidate_id").order("voted_at", { ascending: false }),
     ]);
     setCandidates(c.data || []);
     
