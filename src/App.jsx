@@ -1048,16 +1048,84 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
             const list = candidates.filter(c=>c.category===cat).map(c=>({...c,count:getCount(c.id)})).sort((a,b)=>b.count-a.count);
             const max = Math.max(...list.map(c=>c.count),1);
             const catTotal = list.reduce((sum, item) => sum + item.count, 0);
+            
+            const winner = list[0];
+            const hasWinner = winner && winner.count > 0;
+
             return (
-              <div key={cat} style={{ marginBottom:26 }}>
-                <h4 style={{ fontWeight:600, marginBottom:12, fontSize:14, color: cat==="boys"?"#a5b4fc":"#f9a8d4", textTransform:"uppercase", letterSpacing:"0.06em" }}>{cat === "boys" ? "Men" : "Women"}</h4>
-                {list.map((c,i)=>(
-                  <div key={c.id} style={{ marginBottom:12 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
-                      <span style={{ fontWeight: i===0?600:400 }}>{i===0&&c.count>0?<Trophy size={13} style={{display:"inline",verticalAlign:"middle",marginRight:3}} />:""}{c.name}</span>
-                      <span style={{ color:"#5a5a7a" }}>{c.count} ({catTotal>0?Math.round(c.count/catTotal*100):0}%)</span>
+              <div key={cat} style={{ marginBottom:30 }}>
+                <h4 style={{ fontWeight:600, marginBottom:14, fontSize:14, color: cat==="boys"?"#a5b4fc":"#f9a8d4", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                  {cat === "boys" ? "Men" : "Women"}
+                </h4>
+                
+                {hasWinner && (
+                  <div className="glass glow-anim" style={{ 
+                    borderRadius: 18, 
+                    padding: "1.25rem 1.15rem", 
+                    marginBottom: 16,
+                    border: `1.5px solid ${cat==="boys"?"rgba(99,102,241,0.2)":"rgba(236,72,153,0.2)"}`,
+                    background: `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, ${cat==="boys"?"rgba(99,102,241,0.04)":"rgba(236,72,153,0.04)"} 100%)`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    position: "relative"
+                  }}>
+                    {/* Winner Badge */}
+                    <div style={{ 
+                      position: "absolute", top: 12, right: 12, 
+                      fontSize: 10, fontWeight: 800, padding: "2px 8px", 
+                      borderRadius: 999, background: gradient, color: "#fff", 
+                      letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 3
+                    }}>
+                      <Trophy size={11} /> WINNER
                     </div>
-                    <div className="bar-track"><div className="bar-fill" style={{ width:`${(c.count/max)*100}%`, background:gradient }} /></div>
+
+                    {/* Big Image */}
+                    <div style={{ 
+                      width: 80, height: 80, borderRadius: 14, 
+                      overflow: "hidden", background: "rgba(255,255,255,0.06)", 
+                      border: `2px solid ${cat==="boys"?"#6366f1":"#ec4899"}`,
+                      boxShadow: `0 4px 15px ${cat==="boys"?"rgba(99,102,241,0.2)":"rgba(236,72,153,0.2)"}`,
+                      flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center"
+                    }}>
+                      {winner.photo_url ? (
+                        <img src={winner.photo_url} alt={winner.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <User size={30} color="#5a5a7a" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: "#fff", marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                        {winner.name}
+                      </div>
+                      <div style={{ fontSize: 13, color: cat==="boys"?"#a5b4fc":"#f9a8d4", fontWeight: 600, marginBottom: 8 }}>
+                        {winner.count} votes ({catTotal > 0 ? Math.round(winner.count / catTotal * 100) : 0}%)
+                      </div>
+                      <div className="bar-track">
+                        <div className="bar-fill" style={{ width: "100%", background: gradient }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Remaining candidates list */}
+                {list.filter((_, idx) => !hasWinner || idx > 0).map((c, i) => (
+                  <div key={c.id} style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, alignItems: "center" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {/* Smaller candidate avatar */}
+                        <div style={{ width: 26, height: 26, borderRadius: 6, overflow: "hidden", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User size={13} color="#5a5a7a" />}
+                        </div>
+                        <span style={{ fontWeight: 400 }}>{c.name}</span>
+                      </span>
+                      <span style={{ color: "#5a5a7a" }}>{c.count} ({catTotal > 0 ? Math.round(c.count / catTotal * 100) : 0}%)</span>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${(c.count / max) * 100}%`, background: gradient }} />
+                    </div>
                   </div>
                 ))}
               </div>
