@@ -1143,7 +1143,7 @@ export default function App() {
     if (!session || !deadlineDate) return;
     const closed = Date.now() > deadlineDate;
     if (session.hasVoted) setScreen("thankyou");
-    else if (closed || showResSetting) setScreen("results");
+    else if (closed) setScreen("results");
     else setScreen("vote");
   }, [session, deadlineDate, showResSetting]);
 
@@ -1152,7 +1152,7 @@ export default function App() {
     setSession(s); localStorage.setItem("vs26", JSON.stringify(s));
     const closed = deadlineDate && Date.now() > deadlineDate;
     if (hasVoted) setScreen("thankyou");
-    else if (closed || showResSetting) setScreen("results");
+    else if (closed) setScreen("results");
     else setScreen("vote");
   };
 
