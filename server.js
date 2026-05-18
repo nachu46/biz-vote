@@ -77,16 +77,23 @@ app.post('/send-results', (req, res) => {
     </div>
   `;
 
-  emails.forEach(email => {
-    transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: email.trim(),
-      subject: '🏆 Official Results: Company Vote 2026 🏆',
-      html: htmlContent
-    }).catch(err => {
-      console.error('Failed to send results email in background to:', email, err);
-    });
-  });
+  // Send in background sequentially to avoid SMTP rate-limiting
+  (async () => {
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i];
+      try {
+        await transporter.sendMail({
+          from: process.env.SENDER_EMAIL,
+          to: email.trim(),
+          subject: '🏆 Official Results: Company Vote 2026 🏆',
+          html: htmlContent
+        });
+      } catch (err) {
+        console.error('Failed to send results email to:', email, err);
+      }
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+  })();
 
   res.json({ success: true });
 });

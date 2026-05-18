@@ -57,16 +57,16 @@ export default async function handler(req, res) {
   `;
 
   try {
-    const sendPromises = emails.map(email => 
-      transporter.sendMail({
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i];
+      await transporter.sendMail({
         from: process.env.SENDER_EMAIL,
         to: email.trim(),
         subject: '🏆 Official Results: Company Vote 2026 🏆',
         html: htmlContent
-      })
-    );
-
-    await Promise.all(sendPromises);
+      });
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('Failed to send results email:', err);
