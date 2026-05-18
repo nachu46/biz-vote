@@ -501,7 +501,11 @@ function VoteScreen({ email, candidates, onVoted, onLogout, deadlineDate }) {
   const girls = candidates.filter(c => c.category === "girls");
 
   const submit = async () => {
-    if (!bVote && !gVote) return setErr("Please select at least one candidate.");
+    const hasBoys = boys.length > 0;
+    const hasGirls = girls.length > 0;
+    if ((hasBoys && !bVote) || (hasGirls && !gVote)) {
+      return setErr("Please select one candidate in each available category.");
+    }
     setLoading(true); setErr("");
     const { error } = await supabase.from("votes").insert({ voter_email: email, boys_candidate_id: bVote || null, girls_candidate_id: gVote || null });
     if (error) {
