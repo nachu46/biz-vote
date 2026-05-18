@@ -863,6 +863,50 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
     showT("CSV downloaded");
   };
 
+  const sendResults = async (isTest = false) => {
+    const menList = candidates.filter(c => c.category === "boys").map(c => ({ ...c, count: getCount(c.id) })).sort((a,b) => b.count-a.count);
+    const womenList = candidates.filter(c => c.category === "girls").map(c => ({ ...c, count: getCount(c.id) })).sort((a,b) => b.count-a.count);
+    
+    const menWinner = menList[0] && menList[0].count > 0 ? menList[0].name : "No winner";
+    const menVotes = menList[0] ? menList[0].count : 0;
+    const womenWinner = womenList[0] && womenList[0].count > 0 ? womenList[0].name : "No winner";
+    const womenVotes = womenList[0] ? womenList[0].count : 0;
+    
+    let emails = [];
+    if (isTest) {
+      emails = ["muhammednazuk@gmail.com"];
+    } else {
+      emails = voterList.map(v => v.voter_email);
+      if (emails.length === 0) {
+        showT("No voters to send results to.", "error");
+        return;
+      }
+      if (!confirm(`Are you sure you want to send the official results email to all ${emails.length} voters?`)) return;
+    }
+    
+    setBusy(true);
+    try {
+      const res = await fetch("/api/send-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emails,
+          menWinner,
+          menVotes,
+          womenWinner,
+          womenVotes
+        })
+      });
+      
+      if (!res.ok) throw new Error("Failed to send results email");
+      showT(isTest ? "Test email sent to muhammednazuk@gmail.com!" : "Official results email sent to all voters!");
+    } catch (err) {
+      showT("Failed to send results: " + err.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const resetVotes = async () => {
     if (!confirm("CRITICAL ACTION: This will completely delete ALL votes and reset the count to 0. This cannot be undone. Proceed?")) return;
     try {
@@ -1201,9 +1245,14 @@ function Admin({ candidates, votes, voterList, refresh, onLogout, deadlineDate, 
             )}
           </div>
 
-          <button className="btn-ghost" style={{ width:"fit-content", fontSize:14, display:"flex", alignItems:"center", gap:6 }} onClick={()=>showT("Results email simulated!","info")}>
-            <Send size={14} /> Simulate Send Results Email
-          </button>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:15 }}>
+            <button className="btn-pri" style={{ width:"auto", padding:"0.6rem 1.2rem", fontSize:14, display:"flex", alignItems:"center", gap:6 }} onClick={() => sendResults(false)} disabled={busy}>
+              <Send size={14} /> Send Official Results Email
+            </button>
+            <button className="btn-ghost" style={{ width:"auto", padding:"0.6rem 1.2rem", fontSize:14, display:"flex", alignItems:"center", gap:6 }} onClick={() => sendResults(true)} disabled={busy}>
+              <Mail size={14} /> Send Test to muhammednazuk@gmail.com
+            </button>
+          </div>
           
           <div style={{ marginTop:20, paddingTop:20, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
             <button 
